@@ -490,7 +490,7 @@ export class VietnameseGlyphGenerator {
     const processLists = (
       mainList: string[], 
       relatedList?: string[], 
-      includeRelated: boolean = false
+      includeRelated = false
     ): void => {
       if (mainList.length <= 1) return;
       
@@ -507,7 +507,7 @@ export class VietnameseGlyphGenerator {
             if (!relatedByFeature.has(feature)) {
               relatedByFeature.set(feature, []);
             }
-            relatedByFeature.get(feature)!.push(item);
+            relatedByFeature.get(feature)?.push(item);
           }
         }
       }
