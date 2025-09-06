@@ -1,6 +1,6 @@
 {
   "name": "vietnamese-glyph-generator",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A small TypeScript library to generate Vietnamese glyph placeholders (starter template).",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -20,8 +20,8 @@
     "lint": "eslint . --ext .ts",
     "prepare": "npm run build",
     "prepublishOnly": "npm run lint && npm run test && npm run build",
-    "preversion": "npm run lint && npm run test",
-    "version": "npm run build && git add -A dist",
+  "preversion": "npm run lint && npm run test",
+  "version": "npm run build && (git add -f dist || true)",
     "postversion": "git push && git push --tags",
     "publish:patch": "npm version patch && npm publish",
     "publish:minor": "npm version minor && npm publish",
