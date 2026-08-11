@@ -16,6 +16,8 @@ export interface GlyphOptions {
   dStrokeLowercaseGlyph?: string;
   shouldCreateDotlessI?: boolean;
   shouldCreateHorn?: boolean;
+  onlyLetters?: string[];
+  onlyOutputs?: string[];
 }
 
 export interface Variant {

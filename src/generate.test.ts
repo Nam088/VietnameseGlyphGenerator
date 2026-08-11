@@ -40,4 +40,31 @@ describe('generateGlyphs', () => {
     expect(result.getVariants('i.ss01')).not.toContain('dotlessi.ss01');
     expect(result.getVariants('i.ss01')).toContain('igrave.ss01');
   });
+
+  it('only processes tokens whose base letter is in onlyLetters', () => {
+    const result = generateGlyphs('A.ss01/O.ss01', { onlyLetters: ['A'] });
+    expect(result.getAllBaseGlyphs()).toEqual(['A.ss01']);
+  });
+
+  it('does not restrict letters when onlyLetters is not set', () => {
+    const result = generateGlyphs('A.ss01/O.ss01', {});
+    expect(result.getAllBaseGlyphs()).toEqual(['A.ss01', 'O.ss01']);
+  });
+
+  it('only keeps variants whose output name is in onlyOutputs', () => {
+    const result = generateGlyphs('U.ss01/u.ss01', { onlyOutputs: ['Uhorn.ss01', 'uhorn.ss01'] });
+    expect(result.getVariants('U.ss01')).toEqual(['Uhorn.ss01']);
+    expect(result.getVariants('u.ss01')).toEqual(['uhorn.ss01']);
+  });
+
+  it('keeps only the dotlessi substitution row when onlyOutputs is restricted to it', () => {
+    const result = generateGlyphs('i.ss01', { onlyOutputs: ['dotlessi.ss01'] });
+    expect(result.getVariants('i.ss01')).toEqual(['dotlessi.ss01']);
+  });
+
+  it('combines onlyLetters and onlyOutputs', () => {
+    const result = generateGlyphs('A.ss01/O.ss01', { onlyLetters: ['A'], onlyOutputs: ['Agrave.ss01'] });
+    expect(result.getAllBaseGlyphs()).toEqual(['A.ss01']);
+    expect(result.getVariants('A.ss01')).toEqual(['Agrave.ss01']);
+  });
 });

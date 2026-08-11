@@ -13,10 +13,12 @@ export function generateGlyphs(input: string, options: GlyphOptions = {}): Glyph
   for (const { base, features } of tokenize(cleanInput(input))) {
     const families = letterTable[base];
     if (!families) continue;
+    if (options.onlyLetters && !options.onlyLetters.includes(base)) continue;
 
     const baseGlyph = `${base}.${features}`;
     for (const family of families) {
       for (const variant of markGenerators[family](base, features, normalizedOptions)) {
+        if (options.onlyOutputs && !options.onlyOutputs.includes(variant.output)) continue;
         result.addGlyph(baseGlyph, variant.output, variant.input);
       }
     }
