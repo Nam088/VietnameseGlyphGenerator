@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateGlyphs } from './index';
+import { generateGlyphs, findGlyphCandidates } from './index';
 import { GlyphOptions } from './types';
 
 describe('generateGlyphs (public API)', () => {
@@ -21,5 +21,9 @@ describe('generateGlyphs (public API)', () => {
   it('returns an empty result for an empty string', () => {
     const result = generateGlyphs('', {});
     expect(result.toString()).toBe('');
+  });
+
+  it('exposes findGlyphCandidates from the package entry point', () => {
+    expect(findGlyphCandidates('A/Anvjnavj/A.ss01')).toEqual(['A', 'A.ss01']);
   });
 });
