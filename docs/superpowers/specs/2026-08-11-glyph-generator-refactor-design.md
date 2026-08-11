@@ -32,16 +32,42 @@ Package chưa có người dùng phụ thuộc quan trọng nào ngoài phạm v
 
 ## Kiến trúc
 
-Chuyển từ một class giữ state sang tập hàm thuần, tổ chức theo file trong `src/`:
+Chuyển từ một class giữ state sang tập hàm thuần. Chia nhỏ tối đa theo trách nhiệm, mỗi file một việc, mỗi hàm ngắn và đặt tên rõ nghĩa, không thêm lớp trừu tượng nào không phục vụ mục tiêu ở trên (không tạo abstraction cho tương lai chưa cần tới).
 
-1. `types.ts`. Chỉ giữ type công khai (`GlyphOptions`, `GlyphGenerationResult` và các type liên quan). Đã kiểm tra, các hằng số danh sách glyph mẫu hiện có (`CHARACTER_STYLES`, `GRAVE_ACCENT_GLYPHS`, `ACUTE_ACCENT_GLYPHS`, `TILDE_GLYPHS`, `HOOK_ABOVE_GLYPHS`, `DOT_BELOW_GLYPHS`, `CIRCUMFLEX_GLYPHS`, `BREVE_GLYPHS`, `HORN_GLYPHS`, `DOTLESS_I_GLYPHS`, `OPENTYPE_FEATURES`, `D_STROKE_GLYPHS`) không được logic sinh dấu tiêu thụ ở đâu cả, chỉ tồn tại như dữ liệu tham khảo rời. Các hằng số này bị xoá khỏi `types.ts`.
-2. `options.ts`. Hàm `normalizeOptions(options)`, giữ nguyên toàn bộ giá trị fallback hiện có (grave, acute, tilde, hook above, dot below, circumflex, breve, horn, dotless i, open type feature, d stroke, và fallback secondary về primary).
-3. `letters.ts`. Bảng dữ liệu khai báo, mỗi chữ cái gốc (A, a, E, e, I, i, O, o, U, u, Y, y, D, d, Ohorn, ohorn, Uhorn, uhorn) khai báo nó cần nhóm dấu nào trong số: tone marks cơ bản, circumflex combo, breve combo, horn combo, d stroke, dotless i. Bảng này là nguồn sự thật duy nhất, thay cho hai đoạn switch case trùng lặp (`processGlyphByType`, `processSingleGlyph`).
-4. `marks.ts`. Mỗi nhóm dấu là một hàm thuần nhận `(baseName, features, options)` và trả về `Variant[]` (`{ output: string; input: string }`), build trực tiếp, không đi qua bước stringify. Bao gồm: `generateBasicToneMarks`, `generateCircumflexCombinations`, `generateBreveCombinations`, `generateHornCombinations`, `generateDStroke`, `generateDotlessI`.
-5. `parser.ts`. Hàm tách chuỗi input thành danh sách token. Làm sạch input (bỏ slash đầu/cuối, khoảng trắng, line break, chuẩn hoá nhiều slash liên tiếp) một lần duy nhất, sau đó split theo `/` và theo dấu `.` để ra `{ base: string; features: string }[]`, bỏ qua token không hợp lệ (thiếu dấu chấm, hoặc chấm ở đầu/cuối).
-6. `generate.ts`. Hàm điều phối `generateGlyphs(input, options)`. Với mỗi token từ `parser.ts`, tra `letters.ts` để biết cần gọi nhóm hàm nào trong `marks.ts`, gộp toàn bộ variant thẳng vào kết quả cuối theo đúng thứ tự token xuất hiện trong input.
-7. `result.ts`. Định nghĩa `GlyphGenerationResult` (giữ các phương thức tiện ích hiện có: `toString`, `toJSON`, `getVariants`, `getInputPattern`, `getAllBaseGlyphs`, `addGlyph`), build trực tiếp trong quá trình generate, không round trip qua string.
-8. `index.ts`. Export `generateGlyphs` và các type công khai từ `types.ts`.
+```
+src/
+  types.ts                 (type công khai: GlyphOptions, GlyphGenerationResult, Variant)
+  options.ts                (normalizeOptions)
+  marks/
+    toneMarks.ts            (generateBasicToneMarks)
+    circumflex.ts            (generateCircumflexCombinations)
+    breve.ts                (generateBreveCombinations)
+    horn.ts                (generateHornCombinations)
+    dStroke.ts                (generateDStroke)
+    dotlessI.ts              (generateDotlessI)
+  letters/
+    markFamilies.ts            (union type tên các nhóm dấu, map tên nhóm sang hàm trong marks/)
+    letterTable.ts            (bảng: chữ cái gốc, danh sách nhóm dấu áp dụng)
+  parser/
+    cleanInput.ts            (gỡ slash đầu/cuối, khoảng trắng, line break, chuẩn hoá slash liên tiếp)
+    tokenize.ts              (chuỗi đã sạch, danh sách token base/features)
+  result.ts                (GlyphGenerationResult: toString, toJSON, getVariants, getInputPattern, getAllBaseGlyphs, addGlyph)
+  generate.ts              (generateGlyphs, điều phối parser, letterTable, marks, result)
+  index.ts                (export generateGlyphs và type công khai)
+```
+
+Vai trò từng phần:
+
+1. `types.ts`. Chỉ type công khai. Các hằng số danh sách glyph mẫu hiện có (`CHARACTER_STYLES`, `GRAVE_ACCENT_GLYPHS`, `ACUTE_ACCENT_GLYPHS`, `TILDE_GLYPHS`, `HOOK_ABOVE_GLYPHS`, `DOT_BELOW_GLYPHS`, `CIRCUMFLEX_GLYPHS`, `BREVE_GLYPHS`, `HORN_GLYPHS`, `DOTLESS_I_GLYPHS`, `OPENTYPE_FEATURES`, `D_STROKE_GLYPHS`) đã xác nhận không được logic sinh dấu tiêu thụ, chỉ là dữ liệu tham khảo rời. Xoá hết.
+2. `options.ts`. Một hàm `normalizeOptions(options)`, giữ nguyên toàn bộ giá trị fallback hiện có (grave, acute, tilde, hook above, dot below, circumflex, breve, horn, dotless i, open type feature, d stroke, và fallback secondary về primary).
+3. `marks/*.ts`. Mỗi file một nhóm dấu, một hàm thuần nhận `(baseName, features, options)`, trả `Variant[]` (`{ output: string; input: string }`), build trực tiếp, không qua bước stringify. Sáu file tương ứng sáu nhóm dấu hiện có, không gộp chung một file lớn như bản cũ.
+4. `letters/letterTable.ts`. Bảng dữ liệu khai báo, mỗi chữ cái gốc (A, a, E, e, I, i, O, o, U, u, Y, y, D, d, Ohorn, ohorn, Uhorn, uhorn) khai báo danh sách tên nhóm dấu áp dụng. Nguồn sự thật duy nhất, thay cho hai switch case trùng lặp (`processGlyphByType`, `processSingleGlyph`) trong code cũ.
+5. `letters/markFamilies.ts`. Map tên nhóm dấu (dùng trong `letterTable.ts`) sang hàm generator tương ứng trong `marks/`. Tách riêng khỏi `letterTable.ts` để bảng dữ liệu chỉ chứa dữ liệu, không chứa import hàm.
+6. `parser/cleanInput.ts`. Một hàm làm sạch chuỗi input (bỏ slash đầu/cuối, khoảng trắng, line break, chuẩn hoá nhiều slash liên tiếp thành một).
+7. `parser/tokenize.ts`. Một hàm nhận chuỗi đã sạch, trả `{ base: string; features: string }[]`, bỏ qua token không hợp lệ (thiếu dấu chấm, hoặc chấm ở đầu/cuối).
+8. `generate.ts`. Hàm điều phối `generateGlyphs(input, options)`: `cleanInput` rồi `tokenize`, với mỗi token tra `letterTable` lấy danh sách nhóm dấu, qua `markFamilies` gọi đúng hàm trong `marks/`, gộp toàn bộ variant vào kết quả theo đúng thứ tự token xuất hiện trong input.
+9. `result.ts`. `GlyphGenerationResult` (giữ nguyên các phương thức tiện ích hiện có), build trực tiếp trong lúc generate, không round trip qua string.
+10. `index.ts`. Export `generateGlyphs` và type công khai từ `types.ts`.
 
 ## Public API sau refactor
 
@@ -68,7 +94,7 @@ Bị bỏ khỏi public API: `VietnameseGlyphGenerator` (class), `generateGlyphs
 1. Thêm `vitest.config.ts` ở root repo: `environment: 'node'`, `include: ['src/**/*.test.ts']`, cấu hình `coverage` dùng provider `v8`, reporter gồm `text` và `html`, đặt threshold tối thiểu 90% cho statements/branches/functions/lines trên các file logic chính (`letters.ts`, `marks.ts`, `parser.ts`, `generate.ts`, `options.ts`).
 2. Thêm `@vitest/coverage-v8` vào `devDependencies`.
 3. Thêm script trong `package.json`: `test:watch` chạy `vitest`, `test:coverage` chạy `vitest --run --coverage`. Giữ script `test` hiện tại (`vitest --run`) để CI dùng.
-4. Mỗi file nguồn có file test cạnh nó cùng tên (`options.test.ts`, `letters.test.ts`, `marks.test.ts`, `parser.test.ts`, `generate.test.ts`). Ngoài ra giữ `index.test.ts` làm test đầu cuối (end to end) cho `generateGlyphs`, viết lại theo API mới, bao phủ: mỗi chữ cái gốc sinh đúng nhóm dấu, input rỗng, input một glyph, input nhiều glyph, token không hợp lệ (thiếu dấu chấm, chấm ở đầu/cuối chuỗi), và các flag `shouldCreateHorn`/`shouldCreateDotlessI`.
+4. Mỗi file nguồn có file test cạnh nó cùng tên: `options.test.ts`, `marks/toneMarks.test.ts`, `marks/circumflex.test.ts`, `marks/breve.test.ts`, `marks/horn.test.ts`, `marks/dStroke.test.ts`, `marks/dotlessI.test.ts`, `letters/letterTable.test.ts`, `parser/cleanInput.test.ts`, `parser/tokenize.test.ts`, `generate.test.ts`. Ngoài ra giữ `index.test.ts` làm test đầu cuối (end to end) cho `generateGlyphs`, viết lại theo API mới, bao phủ: mỗi chữ cái gốc sinh đúng nhóm dấu, input rỗng, input một glyph, input nhiều glyph, token không hợp lệ (thiếu dấu chấm, chấm ở đầu/cuối chuỗi), và các flag `shouldCreateHorn`/`shouldCreateDotlessI`.
 
 ## Kế hoạch phiên bản
 
