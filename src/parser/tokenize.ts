@@ -7,11 +7,18 @@ export function tokenize(cleanedInput: string): GlyphToken[] {
   if (!cleanedInput) return [];
 
   const tokens: GlyphToken[] = [];
+  const parts = cleanedInput.split('/');
+  const len = parts.length;
 
-  for (const part of cleanedInput.split('/')) {
-    const pieces = part.split('.');
-    if (pieces.length !== 2 || pieces[0].length === 0 || pieces[1].length === 0) continue;
-    tokens.push({ base: pieces[0], features: pieces[1] });
+  for (let i = 0; i < len; i++) {
+    const part = parts[i];
+    const dotIdx = part.indexOf('.');
+    if (dotIdx > 0 && dotIdx < part.length - 1 && part.indexOf('.', dotIdx + 1) === -1) {
+      tokens.push({
+        base: part.slice(0, dotIdx),
+        features: part.slice(dotIdx + 1)
+      });
+    }
   }
 
   return tokens;

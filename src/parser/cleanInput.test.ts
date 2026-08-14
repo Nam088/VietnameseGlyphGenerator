@@ -17,4 +17,8 @@ describe('cleanInput', () => {
   it('returns an empty string for an empty input', () => {
     expect(cleanInput('')).toBe('');
   });
+
+  it('removes invisible unicode characters and zero-width spaces', () => {
+    expect(cleanInput('\uFEFFA.ss01/\u200BO.ss02\u00A0')).toBe('A.ss01/O.ss02');
+  });
 });

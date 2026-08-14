@@ -7,7 +7,31 @@ export type NormalizedGlyphOptions = Required<Pick<GlyphOptions,
   'dStrokeUppercaseGlyph' | 'dStrokeLowercaseGlyph' | 'shouldCreateDotlessI' | 'shouldCreateHorn'
 >>;
 
-export function normalizeOptions(options: GlyphOptions): NormalizedGlyphOptions {
+export const DEFAULT_NORMALIZED_OPTIONS: NormalizedGlyphOptions = Object.freeze({
+  graveAccentGlyph: 'grave',
+  acuteAccentGlyph: 'acute',
+  tildeGlyph: 'tilde',
+  hookAboveGlyph: 'hookabovecomb',
+  dotBelowGlyph: 'dotbelowcomb',
+  circumflexGlyph: 'circumflex',
+  breveGlyph: 'breve',
+  hornGlyphUppercase: 'horn',
+  hornGlyphLowercase: 'horn',
+  secondaryGraveGlyph: 'grave',
+  secondaryAcuteGlyph: 'acute',
+  secondaryTildeGlyph: 'tilde',
+  secondaryHookAboveGlyph: 'hookabovecomb',
+  dStrokeUppercaseGlyph: 'hyphen.case',
+  dStrokeLowercaseGlyph: 'hyphen.case',
+  shouldCreateDotlessI: true,
+  shouldCreateHorn: true
+});
+
+export function normalizeOptions(options?: GlyphOptions): NormalizedGlyphOptions {
+  if (!options || Object.keys(options).length === 0) {
+    return DEFAULT_NORMALIZED_OPTIONS;
+  }
+
   return {
     graveAccentGlyph: options.graveAccentGlyph ?? 'grave',
     acuteAccentGlyph: options.acuteAccentGlyph ?? 'acute',

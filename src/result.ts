@@ -14,9 +14,23 @@ export function createGlyphGenerationResult(): MutableGlyphGenerationResult {
     },
 
     toString() {
-      const groups = Object.values(glyphs)
-        .map(variants => Object.entries(variants).map(([output, input]) => `${input}=${output}`).join('\r\n'))
-        .filter(group => group.length > 0);
+      const groups: string[] = [];
+      const baseKeys = Object.keys(glyphs);
+      const baseLen = baseKeys.length;
+
+      for (let i = 0; i < baseLen; i++) {
+        const variants = glyphs[baseKeys[i]];
+        const variantKeys = Object.keys(variants);
+        const vLen = variantKeys.length;
+        if (vLen === 0) continue;
+
+        const lines: string[] = new Array(vLen);
+        for (let j = 0; j < vLen; j++) {
+          const output = variantKeys[j];
+          lines[j] = `${variants[output]}=${output}`;
+        }
+        groups.push(lines.join('\r\n'));
+      }
 
       return groups.join('\r\n\r\n');
     },
